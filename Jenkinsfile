@@ -1,33 +1,47 @@
 pipeline {
     agent any
+
     stages {
         stage("Checkout") {
             steps {
                 git branch: 'main', url: 'https://github.com/emannnx/Calculator.git'
             }
         }
+
         stage("Compile") {
             steps {
                 bat "mvn clean compile"
             }
         }
-        stage('Unit test') {
+
+        stage("Unit Test & Code Coverage") {
             steps {
-                bat 'mvn test'
+                // Run tests and collect coverage
+                bat "mvn clean test jacoco:report"
+
+                // Publish JaCoCo HTML report to Jenkins
+                publishHTML(target: [
+                    reportDir: 'target/site/jacoco',
+                    reportFiles: 'index.html',
+                    reportName: 'JaCoCo Code Coverage Report'
+                ])
+
+                // Enforce coverage rules
+                bat "mvn jacoco:check"
             }
         }
-        stage('Code coverage') {
-            steps {
-                // Run tests with JaCoCo agent
-                sh "mvn clean test"
+    }
 
-                // Generate JaCoCo coverage report
-                sh "mvn jacoco:report"
-
-                // Enforce coverage verification rules
-                sh "mvn jacoco:check"
-            }
+    post {
+        always {
+            echo "Cleaning up workspace..."
+            cleanWs()
         }
-
+        success {
+            echo "✅ Build, test, and coverage successful!"
+        }
+        failure {
+            echo "❌ Build or tests failed!"
+        }
     }
 }
