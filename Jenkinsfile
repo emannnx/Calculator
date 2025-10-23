@@ -16,5 +16,18 @@ pipeline {
                 bat 'mvn test'
             }
         }
+        stage('Code coverage') {
+            steps {
+                // Run tests with JaCoCo agent
+                sh "mvn clean test"
+
+                // Generate JaCoCo coverage report
+                sh "mvn jacoco:report"
+
+                // Enforce coverage verification rules
+                sh "mvn jacoco:check"
+            }
+        }
+
     }
 }
